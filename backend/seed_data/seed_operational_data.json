@@ -1,0 +1,152 @@
+{
+  "units": [
+    {
+      "id": "11111111-1111-1111-1111-111111111101",
+      "name": "Phòng Đào tạo",
+      "kind": "DEPARTMENT",
+      "contact_email": "daotao@uni.edu.vn",
+      "phone": "024-3869-0001",
+      "office_location": "Phòng 101 - Tòa nhà C1"
+    },
+    {
+      "id": "11111111-1111-1111-1111-111111111102",
+      "name": "Phòng Công tác Sinh viên",
+      "kind": "DEPARTMENT",
+      "contact_email": "ctsv@uni.edu.vn",
+      "phone": "024-3869-0002",
+      "office_location": "Phòng 102 - Tòa nhà C1"
+    },
+    {
+      "id": "11111111-1111-1111-1111-111111111103",
+      "name": "Khoa Công nghệ Thông tin",
+      "kind": "FACULTY",
+      "contact_email": "fit@uni.edu.vn",
+      "phone": "024-3869-0003",
+      "office_location": "Tầng 3 - Tòa nhà B1"
+    }
+  ],
+  "users": [
+    {
+      "id": "22222222-2222-2222-2222-222222222201",
+      "email": "sv.cntt@uni.edu.vn",
+      "full_name": "Trần Minh Quân",
+      "role": "STUDENT",
+      "unit_id": "11111111-1111-1111-1111-111111111103",
+      "cohort": "K68",
+      "major": "Khoa học Máy tính",
+      "is_active": true
+    },
+    {
+      "id": "22222222-2222-2222-2222-222222222202",
+      "email": "gv.cntt@uni.edu.vn",
+      "full_name": "TS. Lê Hoàng Nam",
+      "role": "LECTURER",
+      "unit_id": "11111111-1111-1111-1111-111111111103",
+      "cohort": null,
+      "major": null,
+      "is_active": true
+    },
+    {
+      "id": "22222222-2222-2222-2222-222222222203",
+      "email": "canbo.daotao@uni.edu.vn",
+      "full_name": "Nguyễn Thị Lan",
+      "role": "STAFF",
+      "unit_id": "11111111-1111-1111-1111-111111111101",
+      "cohort": null,
+      "major": null,
+      "is_active": true
+    },
+    {
+      "id": "22222222-2222-2222-2222-222222222204",
+      "email": "admin@uni.edu.vn",
+      "full_name": "Quản trị Hệ thống",
+      "role": "ADMIN",
+      "unit_id": "11111111-1111-1111-1111-111111111101",
+      "cohort": null,
+      "major": null,
+      "is_active": true
+    }
+  ],
+  "rooms": [
+    {
+      "id": "33333333-3333-3333-3333-333333333301",
+      "code": "A2-201",
+      "building": "A2",
+      "capacity": 60,
+      "room_type": "CLASSROOM",
+      "equipment": ["PROJECTOR", "AC", "MIC"],
+      "opening_hours": "07:00 - 21:00"
+    },
+    {
+      "id": "33333333-3333-3333-3333-333333333302",
+      "code": "A2-202",
+      "building": "A2",
+      "capacity": 80,
+      "room_type": "CLASSROOM",
+      "equipment": ["PROJECTOR", "AC", "MIC", "SMARTBOARD"],
+      "opening_hours": "07:00 - 21:00"
+    },
+    {
+      "id": "33333333-3333-3333-3333-333333333303",
+      "code": "TV-301",
+      "building": "Thư viện",
+      "capacity": 40,
+      "room_type": "SELF_STUDY",
+      "equipment": ["AC", "WIFI", "POWER_OUTLETS"],
+      "opening_hours": "07:30 - 21:30"
+    }
+  ],
+  "services": [
+    {
+      "id": "44444444-4444-4444-4444-444444444401",
+      "unit_id": "11111111-1111-1111-1111-111111111102",
+      "name": "Cấp lại thẻ sinh viên",
+      "procedure": "Bước 1: Đăng ký cấp lại thẻ trên cổng dịch vụ trực tuyến.\nBước 2: Nộp lệ phí in thẻ (50.000đ) qua QR code.\nBước 3: Nhận thẻ sau 05 ngày làm việc tại Phòng 102 - Tòa nhà C1 (mang theo CCCD).",
+      "form_urls": ["/forms/don-xin-cap-lai-the-sv.docx"],
+      "opening_hours": "Thứ 2 - Thứ 6 (08:00 - 11:30 & 13:30 - 17:00)",
+      "contact": "ctsv@uni.edu.vn | 024-3869-0002"
+    },
+    {
+      "id": "44444444-4444-4444-4444-444444444402",
+      "unit_id": "11111111-1111-1111-1111-111111111101",
+      "name": "Xin nghỉ học tạm thời và bảo lưu kết quả",
+      "procedure": "Bước 1: Tải mẫu đơn xin nghỉ học tạm thời và lấy xác nhận của phụ huynh (hoặc minh chứng y tế).\nBước 2: Xin ý kiến của Cố vấn học tập và Ban chủ nhiệm Khoa.\nBước 3: Nộp hồ sơ tại bàn số 3 - Phòng Đào tạo (P.101 - C1) ít nhất 01 tuần trước khi học kỳ bắt đầu.",
+      "form_urls": ["/forms/don-xin-bao-luu-ket-qua.docx"],
+      "opening_hours": "Thứ 2 - Thứ 6 (08:00 - 11:30 & 13:30 - 17:00)",
+      "contact": "daotao@uni.edu.vn | 024-3869-0001"
+    }
+  ],
+  "announcements": [
+    {
+      "id": "55555555-5555-5555-5555-555555555501",
+      "unit_id": "11111111-1111-1111-1111-111111111101",
+      "author_id": "22222222-2222-2222-2222-222222222203",
+      "title": "Thông báo kế hoạch đăng ký học phần Học kỳ 1 năm học 2026-2027",
+      "body": "Phòng Đào tạo thông báo lịch đăng ký học phần chính thức cho sinh viên toàn trường bắt đầu từ 08h00 ngày 15/08/2026. Sinh viên lưu ý kiểm tra điều kiện tiên quyết và số tín chỉ tối thiểu theo Quy chế 2025.",
+      "audience": {
+        "scope": "SCHOOL",
+        "unit_ids": [],
+        "cohorts": [],
+        "majors": []
+      },
+      "status": "PUBLISHED",
+      "approved_by": "22222222-2222-2222-2222-222222222204"
+    },
+    {
+      "id": "55555555-5555-5555-5555-555555555502",
+      "unit_id": "11111111-1111-1111-1111-111111111103",
+      "author_id": "22222222-2222-2222-2222-222222222202",
+      "title": "Lịch bảo vệ đồ án môn học Học máy - Khóa K68 Khoa CNTT",
+      "body": "Sinh viên khóa K68 ngành Khoa học Máy tính nộp báo cáo và slide trước 23h59 Chủ nhật tuần này trên hệ thống.",
+      "audience": {
+        "scope": "UNIT",
+        "unit_ids": ["11111111-1111-1111-1111-111111111103"],
+        "cohorts": ["K68"],
+        "majors": ["Khoa học Máy tính"]
+      },
+      "status": "PUBLISHED",
+      "approved_by": "22222222-2222-2222-2222-222222222202"
+    }
+  ]
+}
+
