@@ -1,16 +1,12 @@
-# Environment variables (Credentials & Secrets)
-.env
-*.env.local
-*.env.development.local
-*.env.test.local
-*.env.production.local
-!.env.example
-
-# Python
+# Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
 *$py.class
+
+# C extensions
 *.so
+
+# Distribution / packaging
 .Python
 build/
 develop-eggs/
@@ -30,47 +26,45 @@ share/python-wheels/
 *.egg
 MANIFEST
 
-# Virtual Environments
-venv/
-.venv/
+# PyInstaller
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+cover/
+
+# Environments
+.env
+.venv
 env/
+venv/
 ENV/
 env.bak/
 venv.bak/
 
-# Node.js & Next.js
-node_modules/
-frontend/node_modules/
-.next/
-frontend/.next/
-out/
-frontend/out/
-build/
-frontend/build/
-.npm
-*.tsbuildinfo
-next-env.d.ts
+# SQLite Database
+*.db
+*.sqlite3
 
-# Storage uploads (Local Object Storage)
-backend/app/storage_uploads/*
-!backend/app/storage_uploads/.gitkeep
-
-# Testing & Cache
-.pytest_cache/
-.coverage
-htmlcov/
-.cache/
-
-# OS generated files
+# Editor / OS files
 .DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
 Thumbs.db
-
-# IDE & Editors
 .vscode/
 .idea/
 *.swp

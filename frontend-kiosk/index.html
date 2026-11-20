@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HUCE Smart AI Kiosk – Trợ lý Học vụ Sảnh Sinh viên ĐH Xây dựng Hà Nội</title>
+  <!-- Include ZXing Browser Library for 1D Code-128 / Code-39 Barcode scanning on back of HUCE Student Card -->
+  <script src="https://unpkg.com/@zxing/library@latest"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      user-select: none;
+      background: #0f172a;
+      color: #f8fafc;
+    }
+    .kiosk-card {
+      background: rgba(30, 41, 59, 0.94);
+      border: 1px solid rgba(148, 163, 184, 0.24);
+      border-radius: 1rem;
+    }
+    .scan-line {
+      position: absolute;
+      left: 0;
+      width: 100%;
+      height: 3px;
+      background: linear-gradient(90deg, transparent, #38bdf8, transparent);
+      animation: scanMove 2.6s infinite ease-in-out;
+      pointer-events: none;
+      z-index: 20;
+    }
+    @keyframes scanMove {
+      0% { top: 4%; }
+      50% { top: 94%; }
+      100% { top: 4%; }
+    }
+    .camera-viewport-normal {
+      height: 430px;
+    }
+    .camera-viewport-expanded {
+      position: fixed !important;
+      inset: 24px !important;
+      height: calc(100vh - 48px) !important;
+      z-index: 9999 !important;
+      border-width: 4px !important;
+      border-color: #38bdf8 !important;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.85);
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between p-3 md:p-5">
+
+  <!-- TOP HEADER BAR -->
+  <header class="kiosk-card px-5 py-3 flex flex-wrap items-center justify-between gap-4 mb-4">
+    <div class="flex items-center gap-3.5">
+      <div class="w-11 h-11 rounded-xl bg-blue-600 flex items-center justify-center font-bold text-lg tracking-wider shadow-lg">
+        HUCE
+      </div>
+      <div>
+        <h1 class="text-base md:text-lg font-bold text-white">TRẠM KIOSK TRỢ LÝ HỌC VỤ AI – SẢNH GIẢNG ĐƯỜNG H1</h1>
+        <p class="text-xs text-sky-300">Trường Đại học Xây dựng Hà Nội (HUCE) • Khoa CNTT • Xác thực Thẻ Sinh viên (Mặt trước/Barcode) & Khuôn mặt</p>
+      </div>
+    </div>
+
+    <div class="flex items-center gap-3">
+      <div id="cameraStatusBadge" class="px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-600 text-slate-300 text-xs font-semibold">
+        📷 Camera: Đang khởi tạo...
+      </div>
+      <div id="sessionTimerBadge" class="hidden px-3.5 py-1.5 rounded-lg bg-amber-500/20 border border-amber-400/40 text-amber-300 text-xs font-semibold">
+        Tự động khóa sau: <span id="idleCountdown">30</span>s
+      </div>
+      <div id="authStatusBadge" class="px-3.5 py-1.5 rounded-lg bg-slate-700 text-slate-200 text-xs font-semibold">
+        Chưa đăng nhập
+      </div>
+      <button id="btnLogout" onclick="logoutKiosk()" class="hidden px-3.5 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold transition">
+        Kết thúc Phiên
+      </button>
+    </div>
+  </header>
+
+  <!-- MAIN CONTENT GRID (6 COLS CAMERA & CARD + 6 COLS CHAT) -->
+  <main class="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-4">
+
+    <!-- LEFT COLUMN: LARGE WIDE-ANGLE CAMERA + STUDENT CARD AUTH (6 COLS) -->
+    <section class="lg:col-span-6 flex flex-col gap-3.5">
+      <div class="kiosk-card p-4">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-2.5">
+          <h2 class="text-sm font-bold text-sky-300 uppercase tracking-wide">
+            1. Khung Ngắm Rộng: Quét Khuôn Mặt & Thẻ Sinh Viên (0206968)
+          </h2>
+          <div class="flex items-center gap-3">
+            <label class="text-xs text-slate-300 flex items-center gap-1 cursor-pointer">
+              <input id="chkMirrorCamera" type="checkbox" checked onchange="toggleMirrorCamera()" class="accent-sky-400" />
+              Lật gương
+            </label>
+            <label class="text-xs text-slate-300 flex items-center gap-1 cursor-pointer">
+              <input id="chkAutoScan" type="checkbox" checked onchange="toggleAutoFaceScan()" class="accent-sky-400" />
+              Tự động bắt nét
+            </label>
+          </div>
+        </div>
+
+        <!-- Camera Selector & View Mode Controls -->
+        <div class="flex flex-wrap gap-2 mb-2.5">
+          <select id="cameraSelect" onchange="switchCameraDevice()" class="flex-1 min-w-[180px] px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-200">
+            <option value="">Đang tìm thiết bị Webcam...</option>
+          </select>
+          <button onclick="startCamera(true)" class="px-3 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold transition">
+            🔄 Mở lại Camera
+          </button>
+          <button onclick="toggleVideoFitMode()" id="btnFitMode" class="px-3 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-sky-300 text-xs font-semibold transition" title="Chuyển đổi hiển thị toàn bộ khung hình gốc của Webcam không bị cắt">
+            📐 Hiện toàn cảnh (Không cắt)
+          </button>
+          <button onclick="toggleExpandCameraModal()" id="btnExpandCam" class="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition">
+            🔍 Phóng to toàn màn hình
+          </button>
+        </div>
+
+        <!-- LARGE WIDE-ANGLE LIVE VIDEO VIEWPORT (430px tall, full uncropped object-contain by default!) -->
+        <div id="cameraViewportContainer" class="relative w-full camera-viewport-normal rounded-2xl bg-slate-950 border-2 border-sky-500/70 overflow-hidden flex items-center justify-center mb-2.5 transition-all">
+          <video id="webcamVideo" autoplay playsinline muted class="w-full h-full object-contain hidden" style="transform: scaleX(-1);"></video>
+          <img id="uploadedFacePreview" class="w-full h-full object-contain hidden" alt="Preview" />
+          <canvas id="overlayCanvas" class="absolute inset-0 w-full h-full pointer-events-none z-10"></canvas>
+          <canvas id="captureCanvas" width="640" height="480" class="hidden"></canvas>
+
+          <!-- Floating close button when in fullscreen expanded mode -->
+          <button id="btnCloseExpand" onclick="toggleExpandCameraModal()" class="hidden absolute top-4 right-4 z-30 px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold shadow-lg">
+            ✖ Thu nhỏ khung Camera (ESC)
+          </button>
+
+          <!-- Visual Guide Frame inside Camera for Face & Student Card -->
+          <div class="absolute inset-6 border border-dashed border-sky-400/35 rounded-2xl pointer-events-none flex flex-col justify-between p-2.5 z-10">
+            <div class="flex justify-between text-[11px] text-sky-300/80 font-medium bg-slate-950/60 px-2 py-0.5 rounded">
+              <span>Khung ngắm toàn cảnh HD (640x480)</span>
+              <span id="liveResolutionLabel">Tỷ lệ gốc 100% (Không cắt góc)</span>
+            </div>
+            <div class="text-center text-[11px] text-slate-300/80 bg-slate-950/60 px-3 py-1 rounded mx-auto">
+              Đưa <strong>Khuôn mặt</strong> hoặc <strong>Thẻ Sinh viên (Mặt trước / Mặt sau Barcode)</strong> vào trong khung ngắm
+            </div>
+          </div>
+
+          <div id="cameraPlaceholder" class="text-center p-6 z-0">
+            <div class="w-16 h-16 mx-auto mb-2 rounded-full border-2 border-dashed border-sky-400 flex items-center justify-center text-sky-300 text-3xl">
+              📷
+            </div>
+            <p id="cameraPlaceholderTitle" class="text-sm text-slate-200 font-semibold">Đang mở khung ngắm Webcam góc rộng...</p>
+            <p id="cameraPlaceholderHint" class="text-xs text-slate-400 mt-1">
+              Hãy bấm <strong>"Allow / Cho phép"</strong> khi trình duyệt hỏi quyền Camera.
+            </p>
+          </div>
+          <div class="scan-line"></div>
+        </div>
+
+        <!-- Live Detection Metrics Bar -->
+        <div class="mb-2.5 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-300">
+          <span id="faceTrackStatus">🔍 Trạng thái quét: Chờ khung hình Camera...</span>
+          <span id="faceLivenessBadge" class="text-sky-300 font-semibold">Liveness: --</span>
+        </div>
+
+        <!-- HOW TO AUTHENTICATE WITH PHYSICAL STUDENT ID CARD (3 WAYS) -->
+        <div class="p-3 rounded-xl bg-slate-900/90 border border-sky-500/30 mb-2.5">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-bold text-amber-300 uppercase">🪪 Xác thực bằng Thẻ Sinh Viên của bạn (Đặng Xuân Đồng – 0206968):</span>
+            <span class="text-[11px] text-slate-400">Hỗ trợ cả Mặt trước & Mặt sau Barcode</span>
+          </div>
+
+          <!-- Primary Camera Action Buttons -->
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-2">
+            <button onclick="scanStudentCardFromCamera()"
+              class="px-3 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold shadow transition flex items-center justify-center gap-1.5"
+              title="Giơ Mặt trước (có ảnh thẻ) hoặc Mặt sau (có mã vạch Barcode) của Thẻ sinh viên lên trước Camera rồi bấm nút này">
+              🪪 1. Giơ Thẻ SV lên Cam để Quét
+            </button>
+            <button onclick="scanRealCameraAndLogin()"
+              class="px-3 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow transition flex items-center justify-center gap-1.5">
+              📸 2. Quét Khuôn Mặt & Đăng nhập
+            </button>
+            <button onclick="enrollMyFaceToCard()"
+              class="px-3 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold shadow transition flex items-center justify-center gap-1.5">
+              👤 3. Lưu Mặt hiện tại vào Thẻ
+            </button>
+          </div>
+
+          <!-- Instant Test with Your Uploaded Student Card Photos (Front & Back) -->
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-2 border-t border-slate-800">
+            <button onclick="verifyWithUploadedCardPhoto('/cards/card_0206968_front.jpg', 'Mặt Trước Thẻ SV 0206968')"
+              class="px-2.5 py-2 rounded-lg bg-blue-600/40 hover:bg-blue-600/70 border border-blue-400/40 text-sky-200 text-[11px] font-semibold transition">
+              🖼️ Quét Ảnh Mặt Trước Thẻ (0206968)
+            </button>
+            <button onclick="verifyWithUploadedCardPhoto('/cards/card_0206968_back.jpg', 'Mặt Sau Barcode Thẻ SV 0206968')"
+              class="px-2.5 py-2 rounded-lg bg-purple-600/40 hover:bg-purple-600/70 border border-purple-400/40 text-purple-200 text-[11px] font-semibold transition">
+              📊 Quét Ảnh Mặt Sau Barcode (0206968)
+            </button>
+            <label class="px-2.5 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 text-[11px] font-semibold text-center cursor-pointer transition">
+              📁 Tải Ảnh Thẻ / Ảnh Mặt Khác
+              <input id="fileFaceUpload" type="file" accept="image/*" class="hidden" onchange="handleUploadedFaceImage(event)" />
+            </label>
+          </div>
+        </div>
+
+        <!-- Card ID Input Row -->
+        <div class="flex gap-2 items-center mb-2">
+          <span class="text-xs text-slate-300 font-medium whitespace-nowrap">Thẻ SV đang chọn:</span>
+          <input id="cardInput" type="text" value="0206968"
+            class="flex-1 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-600 text-amber-300 text-xs font-mono font-bold focus:outline-none focus:border-sky-400"
+            placeholder="Nhập MSSV hoặc Mã thẻ (VD: 0206968 hoặc 0213368)..." />
+          <button onclick="captureViaServerOpenCV()"
+            class="px-2.5 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-[11px] font-semibold text-slate-200 transition"
+            title="Chụp qua OpenCV trên Backend">
+            🖥️ Server Cam
+          </button>
+        </div>
+
+        <!-- PIN Fallback Input Row -->
+        <div class="flex items-center gap-2 mb-2">
+          <input id="pinFallbackInput" type="password" maxlength="6" placeholder="Mã PIN dự phòng (VD: 310305)" class="flex-1 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-600 text-xs text-white focus:outline-none focus:border-sky-400" />
+          <button onclick="loginWithPinFallback()" class="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition">🔑 Đăng nhập PIN</button>
+        </div>
+
+        <div id="authResultBox" class="p-2.5 rounded-lg bg-slate-900/95 border border-slate-700 text-xs text-slate-300">
+          Sẵn sàng: Đã nạp sẵn hồ sơ Thẻ sinh viên của <strong>Đặng Xuân Đồng (MSSV: 0206968 – Lớp 68CS1)</strong>. Bạn có thể giơ thẻ lên trước Camera, nhìn vào Camera, hoặc bấm <strong>"🖼️ Quét Ảnh Mặt Trước Thẻ (0206968)"</strong> để kiểm tra!
+        </div>
+      </div>
+
+      <!-- Student Profile Summary Card -->
+      <div class="kiosk-card p-4 flex-1">
+        <h3 class="text-xs font-bold text-sky-300 uppercase tracking-wide mb-2">2. Hồ sơ Thẻ Sinh viên & Học vụ Đang Phục vụ</h3>
+        <div id="studentProfileBox" class="text-xs space-y-2 text-slate-300">
+          <p class="text-slate-400 italic">Chưa có phiên sinh viên xác thực.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- RIGHT COLUMN: TOUCH QUICK ACTIONS, AGENTIC CHAT & ACADEMIC TABS (6 COLS) -->
+    <section class="lg:col-span-6 flex flex-col gap-3.5">
+
+      <!-- Quick Touch Action Buttons for Lobby Kiosk -->
+      <div class="kiosk-card p-4">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-xs font-bold uppercase tracking-wider text-sky-300">Chạm nhanh Tra cứu Học vụ tại Sảnh (Touch Shortcuts):</span>
+          <span class="text-[11px] text-slate-400">Agentic RAG + SQL/DAG Function Calling</span>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-5 gap-2">
+          <button onclick="quickAsk('Điểm kỳ này của tôi có đủ điều kiện xét học bổng khuyến khích học tập không?')"
+            class="p-2.5 rounded-xl bg-slate-800 hover:bg-blue-600/40 border border-slate-600 text-left transition">
+            <div class="text-sm font-bold mb-0.5">🎓 Xét Học bổng</div>
+            <div class="text-[11px] text-slate-300">Điều kiện & Đối chiếu GPA/ĐRL</div>
+          </button>
+          <button onclick="quickAsk('Cho tôi xem lịch học thời khóa biểu tuần này và phòng học cụ thể.')"
+            class="p-2.5 rounded-xl bg-slate-800 hover:bg-blue-600/40 border border-slate-600 text-left transition">
+            <div class="text-sm font-bold mb-0.5">📅 Lịch học Tuần</div>
+            <div class="text-[11px] text-slate-300">Giờ học, phòng H1/H2/H3, GV</div>
+          </button>
+          <button onclick="quickAsk('Lịch thi kết thúc học phần kỳ này của tôi ngày nào, phòng thi và số báo danh bao nhiêu?')"
+            class="p-2.5 rounded-xl bg-slate-800 hover:bg-blue-600/40 border border-slate-600 text-left transition">
+            <div class="text-sm font-bold mb-0.5">📝 Lịch thi & SBD</div>
+            <div class="text-[11px] text-slate-300">Ngày thi, ca thi, phòng, SBD</div>
+          </button>
+          <button onclick="quickAsk('Gợi ý lộ trình môn học kỳ tới cho tôi theo đồ thị tiên quyết DAG.')"
+            class="p-2.5 rounded-xl bg-slate-800 hover:bg-blue-600/40 border border-slate-600 text-left transition">
+            <div class="text-sm font-bold mb-0.5">🧭 Lộ trình Học</div>
+            <div class="text-[11px] text-slate-300">Kiểm tra tiên quyết DAG</div>
+          </button>
+          <button onclick="quickAsk('Quy định về cảnh báo học vụ, thang điểm quy đổi hệ 4 và chuẩn đầu ra tiếng Anh là gì?')"
+            class="p-2.5 rounded-xl bg-slate-800 hover:bg-blue-600/40 border border-slate-600 text-left transition">
+            <div class="text-sm font-bold mb-0.5">📘 Quy chế Đào tạo</div>
+            <div class="text-[11px] text-slate-300">Cảnh báo học vụ, chuẩn đầu ra</div>
+          </button>
+        </div>
+      </div>
+
+      <!-- Chat & Academic Visualization Box -->
+      <div class="kiosk-card p-4 flex-1 flex flex-col justify-between min-h-[470px]">
+        <div id="chatMessages" class="space-y-3 overflow-y-auto max-h-[420px] pr-2">
+          <div class="p-3.5 rounded-xl bg-slate-800/90 border border-slate-700 text-sm leading-relaxed">
+            <p class="font-bold text-sky-300 mb-1">🤖 Trợ lý Học vụ AI – Trường Đại học Xây dựng Hà Nội (HUCE)</p>
+            <p class="text-slate-200">
+              Xin chào <strong>Đặng Xuân Đồng (MSSV: 0206968 – Lớp 68CS1)</strong>! Khung ngắm Camera đã được mở rộng toàn cảnh (không cắt góc) để bạn quan sát rõ toàn bộ khuôn mặt và thẻ sinh viên. Bạn có thể:<br/>
+              • Giơ <strong>Mặt trước</strong> hoặc <strong>Mặt sau (có mã vạch Barcode)</strong> của Thẻ sinh viên lên trước Camera rồi bấm <strong>"🪪 1. Giơ Thẻ SV lên Cam để Quét"</strong>.<br/>
+              • Hoặc bấm trực tiếp <strong>"🖼️ Quét Ảnh Mặt Trước Thẻ (0206968)"</strong> / <strong>"📊 Quét Ảnh Mặt Sau Barcode (0206968)"</strong> để kiểm thử với chính 2 ảnh thẻ bạn vừa cung cấp!
+            </p>
+          </div>
+        </div>
+
+        <!-- Input Bar -->
+        <div class="mt-3 pt-3 border-t border-slate-700 flex gap-2">
+          <input id="questionInput" type="text"
+            onkeydown="if(event.key==='Enter') sendQuestion()"
+            class="flex-1 px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-600 text-white text-sm focus:outline-none focus:border-sky-400"
+            placeholder="Nhập câu hỏi về quy chế, điều kiện học bổng, lịch học, lịch thi, lộ trình học..." />
+          <button onclick="startVoiceInput()" title="Hỏi bằng giọng nói tiếng Việt"
+            class="px-3.5 py-2.5 rounded-xl bg-slate-700 hover:bg-slate-600 text-sky-300 font-bold text-xs transition">
+            🎙️ Giọng nói
+          </button>
+          <button onclick="sendQuestion()"
+            class="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shadow-lg transition">
+            Gửi Câu hỏi
+          </button>
+        </div>
+      </div>
+
+    </section>
+  </main>
+
+  <footer class="mt-3 text-center text-xs text-slate-400">
+    Hệ thống Trợ lý Học vụ AI & Kiosk Thông minh HUCE • Tích hợp Xác thực Thẻ Sinh viên (0206968 - Đặng Xuân Đồng & 0213368 - Nguyễn Đức Thiện)
+  </footer>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

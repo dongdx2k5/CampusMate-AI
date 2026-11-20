@@ -1,2 +1,1 @@
-# CampusMate AI
-
+"""HUCE Smart AI Kiosk & Academic Assistant Backend Package."""
